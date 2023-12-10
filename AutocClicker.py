@@ -1,4 +1,4 @@
-import pyautogui
+import pyautogui #
 import time
 import numpy as np
 from pynput.mouse import Controller, Button
