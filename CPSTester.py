@@ -9,23 +9,31 @@ class CPSTester:
 
         # Values
         self.click_count = 0
-        self.duration_options = [1, 5, 10, 60, 300]
+        self.duration_options = [1, 5, 10, 30, 60, 120, 300]
         self.start_duration = self.duration_options[0]
         self.duration = self.start_duration
 
+        # Welcome Label
+        self.welcome_label = tk.Label(master, text="Welcome to CPS Tester", font=("Arial", 15))
+        self.welcome_label.pack()
+
+        # Credits
+        self.credits_label = tk.Label(master, text="By Gor Mar", font=("Arial", 10))
+        self.credits_label.pack()
+
         # Label for dropdown menu
-        self.select_label = tk.Label(master, text="Select time:", font=("Arial", 15))
-        self.select_label.pack()
+        self.select_label = tk.Label(master, text="Select duration:", font=("Arial", 15))
+        self.select_label.pack(pady=5)
 
         # Duration dropdown menu
         self.duration_var = tk.StringVar(master)
         self.duration_var.set(self.start_duration) 
         self.duration_combobox = ttk.Combobox(master, textvariable=self.duration_var, values=self.duration_options, state="readonly", font=("Arial", 15))
-        self.duration_combobox.pack(pady=20)
+        self.duration_combobox.pack(pady=5)
 
         # Start button
-        self.start_button = tk.Button(master, text="Start", command=self.start_timer, font=("Arial", 20))
-        self.start_button.pack()
+        self.start_button = tk.Button(master, text="Start", command=self.start_timer, font=("Arial", 15))
+        self.start_button.pack(pady=5)
 
     def start_timer(self):
         self.start_duration = float(self.duration_var.get())
@@ -33,6 +41,8 @@ class CPSTester:
         self.start_button.pack_forget() 
         self.duration_combobox.pack_forget()
         self.select_label.pack_forget()
+        self.welcome_label.pack_forget()
+        self.credits_label.pack_forget()
 
         self.label = tk.Label(self.master, text=f"Click count: 0\nTime remaining: {self.duration:.1f} seconds", font=("Arial", 14))
         self.label.pack(pady=20)
