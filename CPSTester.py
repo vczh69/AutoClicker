@@ -59,5 +59,3 @@ if __name__ == "__main__":
     app = CPSTester(root)
     root.geometry("400x300")
     root.mainloop()
-
-
