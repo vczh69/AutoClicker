@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 
 class CPSTester:
     def __init__(self, master):
@@ -8,38 +9,40 @@ class CPSTester:
 
         # Values
         self.click_count = 0
-        self.start_duration = 10
-        self.duration = 10
+        self.duration_options = [1, 5, 10, 60, 300]
+        self.start_duration = self.duration_options[0]
+        self.duration = self.start_duration
 
-        # Duration
-        self.duration_entry = tk.Entry(master)
-        self.duration_entry.insert(0, str(self.start_duration))
-        self.duration_entry.pack(pady=10)
+        # Label for dropdown menu
+        self.select_label = tk.Label(master, text="Select time:", font=("Arial", 15))
+        self.select_label.pack()
+
+        # Duration dropdown menu
+        self.duration_var = tk.StringVar(master)
+        self.duration_var.set(self.start_duration) 
+        self.duration_combobox = ttk.Combobox(master, textvariable=self.duration_var, values=self.duration_options, state="readonly", font=("Arial", 15))
+        self.duration_combobox.pack(pady=20)
 
         # Start button
-        self.start_button = tk.Button(master, text="Start", command=self.start_timer, font=("Arial", 12))
+        self.start_button = tk.Button(master, text="Start", command=self.start_timer, font=("Arial", 20))
         self.start_button.pack()
 
     def start_timer(self):
-        try:
-            self.start_duration = float(self.duration_entry.get())
-            self.duration = self.start_duration
-            self.start_button.pack_forget()  # Remove the Start button
-            self.duration_entry.pack_forget()  # Remove the duration entry
+        self.start_duration = float(self.duration_var.get())
+        self.duration = self.start_duration
+        self.start_button.pack_forget() 
+        self.duration_combobox.pack_forget()
+        self.select_label.pack_forget()
 
-            self.label = tk.Label(self.master, text=f"Click count: 0\nTime remaining: {self.duration:.1f} seconds", font=("Arial", 14))
-            self.label.pack(pady=20)
+        self.label = tk.Label(self.master, text=f"Click count: 0\nTime remaining: {self.duration:.1f} seconds", font=("Arial", 14))
+        self.label.pack(pady=20)
 
-            self.click_button = tk.Button(self.master, text="Click me!", command=self.increment_click_count, font=("Arial", 20))
-            self.click_button.pack()
-        except ValueError:
-            self.start_button.pack() 
-            self.duration_entry.pack()
-            self.label.config(text="Invalid input for duration")
+        self.click_button = tk.Button(self.master, text="Click me!", command=self.increment_click_count, font=("Arial", 20))
+        self.click_button.pack()
 
     def increment_click_count(self):
-        if self.click_count == 0:  # Check if it's the first click
-            self.update_timer()  # Start the timer only on the first click
+        if self.click_count == 0:
+            self.update_timer() 
         self.click_count += 1
         self.label.config(text=f"Click count: {self.click_count}\nTime remaining: {self.duration:.1f} seconds")
 
@@ -51,11 +54,20 @@ class CPSTester:
         else:
             self.click_button.pack_forget()
             cps = self.click_count / self.start_duration
-            self.label.config(text=f"Final click count: {self.click_count}\nCPS: {cps:.2f}")
+            self.label.config(text=f"Final click count: {self.click_count}\n\nCPS: {cps:.2f}", font=("Arial", 15))
+
+            # Restart button
+            self.restart_button = tk.Button(self.master, text="Restart", command=self.restart_game, font=("Arial", 15))
+            self.restart_button.pack(pady=10)
+
+    def restart_game(self):
+        self.label.pack_forget()
+        self.restart_button.pack_forget()
+        self.__init__(self.master)
 
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = CPSTester(root)
-    root.geometry("400x300")
+    root.geometry("350x200")
     root.mainloop()
