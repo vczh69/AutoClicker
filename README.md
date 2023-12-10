@@ -1,2 +1,3 @@
 # AutoClicker
-# Creating autoclicker app which lets you change CPS and toggle button
+# Creating autoclicker which lets you change CPS, hotkey and clicking key.
+# Also creating CPS tester so you can test the autoclicker. :)
