@@ -4,6 +4,7 @@ import numpy as np
 from pynput.mouse import Controller, Button
 from pynput.keyboard import Listener, KeyCode
 import threading
+import tkinter as tk
 
 time.sleep(2)
 
@@ -24,7 +25,7 @@ def toggle_event(key):
         clicking = not clicking
         print("Turned off")
 
-click_thread = threading.Thread(target=clicker, args=(0.2, 2))
+click_thread = threading.Thread(target=clicker, args=(0.1, 0.1))
 click_thread.start()
 
 with Listener(on_press=toggle_event) as listener:
