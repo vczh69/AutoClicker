@@ -9,7 +9,7 @@ class CPSTester:
         self.start_duration = self.duration_options[0]
         self.duration = self.start_duration
 
-        # Name
+        # GUI setup
         self.master = master
         self.master.title("CPS Tester")
 
@@ -21,11 +21,9 @@ class CPSTester:
         self.credits_label = tk.Label(master, text="By Gor Mar", font=("Arial", 10))
         self.credits_label.pack()
 
-        # Label for dropdown menu
+        # Duration dropdown menu
         self.select_label = tk.Label(master, text="Select duration:", font=("Arial", 15))
         self.select_label.pack(pady=5)
-
-        # Duration dropdown menu
         self.duration_var = tk.StringVar(master)
         self.duration_var.set(self.start_duration) 
         self.duration_combobox = ttk.Combobox(master, textvariable=self.duration_var, values=self.duration_options, state="readonly", font=("Arial", 15))
