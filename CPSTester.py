@@ -3,15 +3,15 @@ from tkinter import ttk
 
 class CPSTester:
     def __init__(self, master):
-        # Name
-        self.master = master
-        self.master.title("CPS Tester")
 
-        # Values
         self.click_count = 0
         self.duration_options = [1, 5, 10, 30, 60, 120, 300]
         self.start_duration = self.duration_options[0]
         self.duration = self.start_duration
+
+        # Name
+        self.master = master
+        self.master.title("CPS Tester")
 
         # Welcome Label
         self.welcome_label = tk.Label(master, text="Welcome to CPS Tester", font=("Arial", 15))
@@ -59,6 +59,7 @@ class CPSTester:
     def update_timer(self):
         if self.duration > 0:
             self.duration -= 0.1
+            self.duration = max(0, self.duration)
             self.label.config(text=f"Click count: {self.click_count}\nTime remaining: {self.duration:.1f} seconds")
             self.master.after(100, self.update_timer) 
         else:
@@ -66,13 +67,18 @@ class CPSTester:
             cps = self.click_count / self.start_duration
             self.label.config(text=f"Final click count: {self.click_count}\n\nCPS: {cps:.2f}", font=("Arial", 15))
 
-            # Restart button
+            # Restart Button
             self.restart_button = tk.Button(self.master, text="Restart", command=self.restart_game, font=("Arial", 15))
-            self.restart_button.pack(pady=10)
+            self.restart_button.pack(side=tk.LEFT, padx=20, pady=10)
+
+            # Exit Button
+            self.exit_button = tk.Button(self.master, text="Exit", command=self.master.destroy, font=("Arial", 15))
+            self.exit_button.pack(side=tk.RIGHT, padx=20, pady=10) 
 
     def restart_game(self):
         self.label.pack_forget()
         self.restart_button.pack_forget()
+        self.exit_button.pack_forget()
         self.__init__(self.master)
 
 
