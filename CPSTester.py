@@ -42,7 +42,7 @@ class CPSTester:
         self.welcome_label.pack_forget()
         self.credits_label.pack_forget()
 
-        self.label = tk.Label(self.master, text=f"Click count: 0\nTime remaining: {self.duration:.1f} seconds", font=("Arial", 14))
+        self.label = tk.Label(self.master, text=f"Click count: 0\n\nTime remaining: {self.duration:.1f} seconds", font=("Arial", 14))
         self.label.pack(pady=20)
 
         self.click_button = tk.Button(self.master, text="Click me!", command=self.increment_click_count, font=("Arial", 20))
@@ -52,26 +52,36 @@ class CPSTester:
         if self.click_count == 0:
             self.update_timer() 
         self.click_count += 1
-        self.label.config(text=f"Click count: {self.click_count}\nTime remaining: {self.duration:.1f} seconds")
+        self.label.config(text=f"Click count: {self.click_count}\n\nTime remaining: {self.duration:.1f} seconds")
 
     def update_timer(self):
         if self.duration > 0:
             self.duration -= 0.1
             self.duration = max(0, self.duration)
-            self.label.config(text=f"Click count: {self.click_count}\nTime remaining: {self.duration:.1f} seconds")
-            self.master.after(100, self.update_timer) 
+            self.label.config(text=f"Click count: {self.click_count}\n\nTime remaining: {self.duration:.1f} seconds")
+            self.master.after(100, self.update_timer)
         else:
             self.click_button.pack_forget()
-            cps = self.click_count / self.start_duration
-            self.label.config(text=f"Final click count: {self.click_count}\n\nCPS: {cps:.2f}", font=("Arial", 15))
+            self.cps()
 
+    def cps(self, current_cps=None):
+        if current_cps is None:
+            current_cps = 0
+        cps = self.click_count / self.start_duration
+
+        if current_cps < cps:
+            current_cps += 0.1
+            current_cps = min(cps, current_cps)
+            self.label.config(text=f"Final click count: {self.click_count}\n\nCPS: {current_cps:.2f}")
+            self.master.after(10, self.cps, current_cps)
+        else:
             # Restart Button
             self.restart_button = tk.Button(self.master, text="Restart", command=self.restart_game, font=("Arial", 15))
             self.restart_button.pack(side=tk.LEFT, padx=20, pady=10)
 
             # Exit Button
             self.exit_button = tk.Button(self.master, text="Exit", command=self.master.destroy, font=("Arial", 15))
-            self.exit_button.pack(side=tk.RIGHT, padx=20, pady=10) 
+            self.exit_button.pack(side=tk.RIGHT, padx=20, pady=10)
 
     def restart_game(self):
         self.label.pack_forget()
