@@ -23,15 +23,15 @@ class CPSTester:
 
         # Duration entry
         self.duration_label = tk.Label(master, text="Enter duration:", font=("Arial", 15))
-        self.duration_label.pack(pady=5)
+        self.duration_label.pack(pady=10)
 
         vcmd = (self.master.register(self.validate_input), '%P')
         self.duration_entry = tk.Entry(master, validate="key", validatecommand=vcmd)
-        self.duration_entry.pack()
+        self.duration_entry.pack(pady=5)
 
         # Start button
-        self.start_button = tk.Button(master, text="Start", command=self.start_timer, font=("Arial", 15))
-        self.start_button.pack(pady=6)
+        self.start_button = tk.Button(master, text="Start", command=self.start_timer, font=("Arial", 18), width=10)
+        self.start_button.pack(pady=10)
 
     def validate_input(self, value):
         if not value:
@@ -48,16 +48,17 @@ class CPSTester:
             self.duration_label.pack_forget()
             self.welcome_label.pack_forget()
             self.credits_label.pack_forget()
-            self.error_label.pack_forget()
+            if self.label_created:
+                self.error_label.pack_forget()
 
             self.label = tk.Label(self.master, text=f"Click count: 0\n\nTime remaining: {self.duration:.1f} seconds", font=("Arial", 14))
             self.label.pack(pady=20)
 
-            self.click_button = tk.Button(self.master, text="Click me!", command=self.increment_click_count, font=("Arial", 20))
+            self.click_button = tk.Button(self.master, text="Click", command=self.increment_click_count, font=("Arial", 20), width=15, height=2, borderwidth=2)
             self.click_button.pack()
         except ValueError:
             if not self.label_created:
-                self.error_label = tk.Label(self.master, text="Enter a valid duration", font={"Arial", 10})
+                self.error_label = tk.Label(self.master, text="Enter a valid duration", font={"Arial", 10}, fg="red")
                 self.error_label.pack(pady=5)
                 self.label_created = True
                 print("label created")
@@ -81,7 +82,10 @@ class CPSTester:
     def cps(self, current_cps=None):
         if current_cps is None:
             current_cps = 0
-        cps = self.click_count / self.start_duration
+        if self.start_duration > 0:
+            cps = self.click_count / self.start_duration
+        else: 
+            cps = 0 
 
         if current_cps < cps:
             current_cps += 0.1
@@ -90,11 +94,11 @@ class CPSTester:
             self.master.after(10, self.cps, current_cps)
         else:
             # Restart Button
-            self.restart_button = tk.Button(self.master, text="Restart", command=self.restart_game, font=("Arial", 15))
+            self.restart_button = tk.Button(self.master, text="Restart", command=self.restart_game, font=("Arial", 17))
             self.restart_button.pack(side=tk.LEFT, padx=20, pady=10)
 
             # Exit Button
-            self.exit_button = tk.Button(self.master, text="Exit", command=self.master.destroy, font=("Arial", 15))
+            self.exit_button = tk.Button(self.master, text="Exit", command=self.master.destroy, font=("Arial", 17))
             self.exit_button.pack(side=tk.RIGHT, padx=20, pady=10)
 
     def restart_game(self):
@@ -107,5 +111,5 @@ class CPSTester:
 if __name__ == "__main__":
     root = tk.Tk()
     app = CPSTester(root)
-    root.geometry("350x200")
+    root.geometry("350x230")
     root.mainloop()

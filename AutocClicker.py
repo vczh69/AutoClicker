@@ -99,7 +99,8 @@ class Autoclicker:
             cps = float(self.cps_entry.get())
             if cps > 0:
                 self.delay = 1 / cps
-            self.error_label.pack_forget()
+            if self.label_created:
+                self.error_label.pack_forget()
             print(f"CPS updated to {cps}")
         except ValueError:
             if not self.label_created:
