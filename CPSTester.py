@@ -3,7 +3,7 @@ from tkinter import ttk
 
 class CPSTester:
     def __init__(self, master):
-
+        self.label_created = False
         self.click_count = 0
         self.duration_options = [1, 5, 10, 30, 60, 120, 300]
         self.start_duration = self.duration_options[0]
@@ -21,32 +21,46 @@ class CPSTester:
         self.credits_label = tk.Label(master, text="By Gor Mar", font=("Arial", 10))
         self.credits_label.pack()
 
-        # Duration dropdown menu
-        self.select_label = tk.Label(master, text="Select duration:", font=("Arial", 15))
-        self.select_label.pack(pady=5)
-        self.duration_var = tk.StringVar(master)
-        self.duration_var.set(self.start_duration) 
-        self.duration_combobox = ttk.Combobox(master, textvariable=self.duration_var, values=self.duration_options, state="readonly", font=("Arial", 15))
-        self.duration_combobox.pack(pady=5)
+        # Duration entry
+        self.duration_label = tk.Label(master, text="Enter duration:", font=("Arial", 15))
+        self.duration_label.pack(pady=5)
+
+        vcmd = (self.master.register(self.validate_input), '%P')
+        self.duration_entry = tk.Entry(master, validate="key", validatecommand=vcmd)
+        self.duration_entry.pack()
 
         # Start button
         self.start_button = tk.Button(master, text="Start", command=self.start_timer, font=("Arial", 15))
-        self.start_button.pack(pady=5)
+        self.start_button.pack(pady=6)
+
+    def validate_input(self, value):
+        if not value:
+            return True
+
+        return len(value) <= 4 and value.replace('.', '', 1).isdigit()
 
     def start_timer(self):
-        self.start_duration = float(self.duration_var.get())
-        self.duration = self.start_duration
-        self.start_button.pack_forget() 
-        self.duration_combobox.pack_forget()
-        self.select_label.pack_forget()
-        self.welcome_label.pack_forget()
-        self.credits_label.pack_forget()
+        try:
+            self.start_duration = float(self.duration_entry.get())
+            self.duration = self.start_duration
+            self.start_button.pack_forget() 
+            self.duration_entry.pack_forget()
+            self.duration_label.pack_forget()
+            self.welcome_label.pack_forget()
+            self.credits_label.pack_forget()
+            self.error_label.pack_forget()
 
-        self.label = tk.Label(self.master, text=f"Click count: 0\n\nTime remaining: {self.duration:.1f} seconds", font=("Arial", 14))
-        self.label.pack(pady=20)
+            self.label = tk.Label(self.master, text=f"Click count: 0\n\nTime remaining: {self.duration:.1f} seconds", font=("Arial", 14))
+            self.label.pack(pady=20)
 
-        self.click_button = tk.Button(self.master, text="Click me!", command=self.increment_click_count, font=("Arial", 20))
-        self.click_button.pack()
+            self.click_button = tk.Button(self.master, text="Click me!", command=self.increment_click_count, font=("Arial", 20))
+            self.click_button.pack()
+        except ValueError:
+            if not self.label_created:
+                self.error_label = tk.Label(self.master, text="Enter a valid duration", font={"Arial", 10})
+                self.error_label.pack(pady=5)
+                self.label_created = True
+                print("label created")
 
     def increment_click_count(self):
         if self.click_count == 0:
