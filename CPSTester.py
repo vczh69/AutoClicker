@@ -11,26 +11,24 @@ class CPSTester:
 
         # GUI setup
         self.master = master
-        self.master.title("CPS Tester")
-
-        # Welcome Label
-        self.welcome_label = tk.Label(master, text="Welcome to CPS Tester", font=("Arial", 15))
-        self.welcome_label.pack()
-
-        # Credits
-        self.credits_label = tk.Label(master, text="By Gor Mar", font=("Arial", 10))
-        self.credits_label.pack()
+        self.master.title("CPS Tester by Gor Mar")
 
         # Duration entry
+        style = ttk.Style()
+        style.configure("TEntry")
+
         self.duration_label = tk.Label(master, text="Enter duration:", font=("Arial", 15))
         self.duration_label.pack(pady=10)
 
         vcmd = (self.master.register(self.validate_input), '%P')
-        self.duration_entry = tk.Entry(master, validate="key", validatecommand=vcmd)
+        self.duration_entry = ttk.Entry(master, validate="key", validatecommand=vcmd, style="TEntry", width=20)
         self.duration_entry.pack(pady=5)
 
         # Start button
-        self.start_button = tk.Button(master, text="Start", command=self.start_timer, font=("Arial", 18), width=10)
+        style = ttk.Style()
+        style.configure("TButton", font=("Arial", 18))
+
+        self.start_button = ttk.Button(master, text="Start", command=self.start_timer, style="TButton", width=10)
         self.start_button.pack(pady=10)
 
     def validate_input(self, value):
@@ -46,19 +44,21 @@ class CPSTester:
             self.start_button.pack_forget() 
             self.duration_entry.pack_forget()
             self.duration_label.pack_forget()
-            self.welcome_label.pack_forget()
-            self.credits_label.pack_forget()
             if self.label_created:
                 self.error_label.pack_forget()
+
+            # Click button
+            style = ttk.Style()
+            style.configure("TButton", font=("Arial", 20),  width=15, height=1, borderwidth=2)
 
             self.label = tk.Label(self.master, text=f"Click count: 0\n\nTime remaining: {self.duration:.1f} seconds", font=("Arial", 14))
             self.label.pack(pady=20)
 
-            self.click_button = tk.Button(self.master, text="Click", command=self.increment_click_count, font=("Arial", 20), width=15, height=2, borderwidth=2)
+            self.click_button = ttk.Button(self.master, text="Click", command=self.increment_click_count, style="TButton")
             self.click_button.pack()
         except ValueError:
             if not self.label_created:
-                self.error_label = tk.Label(self.master, text="Enter a valid duration", font={"Arial", 10}, fg="red")
+                self.error_label = tk.Label(self.master, text="Enter a valid duration", font={"Arial", 3}, fg="red")
                 self.error_label.pack(pady=5)
                 self.label_created = True
                 print("label created")
@@ -93,12 +93,18 @@ class CPSTester:
             self.label.config(text=f"Final click count: {self.click_count}\n\nCPS: {current_cps:.2f}")
             self.master.after(10, self.cps, current_cps)
         else:
-            # Restart Button
-            self.restart_button = tk.Button(self.master, text="Restart", command=self.restart_game, font=("Arial", 17))
+            # Restart button
+            restart_style = ttk.Style()
+            restart_style.configure("Restart.TButton", font=("Arial", 15), width=8)
+
+            self.restart_button = ttk.Button(self.master, text="Restart", command=self.restart_game, style="Restart.TButton")
             self.restart_button.pack(side=tk.LEFT, padx=20, pady=10)
 
-            # Exit Button
-            self.exit_button = tk.Button(self.master, text="Exit", command=self.master.destroy, font=("Arial", 17))
+            # Exit button
+            exit_style = ttk.Style()
+            exit_style.configure("Exit.TButton", font=("Arial", 15), width=5)
+
+            self.exit_button = ttk.Button(self.master, text="Exit", command=self.master.destroy, style="Exit.TButton")
             self.exit_button.pack(side=tk.RIGHT, padx=20, pady=10)
 
     def restart_game(self):
@@ -111,5 +117,5 @@ class CPSTester:
 if __name__ == "__main__":
     root = tk.Tk()
     app = CPSTester(root)
-    root.geometry("350x230")
+    root.geometry("350x180")
     root.mainloop()
