@@ -8,44 +8,31 @@ from tkinter import ttk
 
 class Autoclicker:
     def __init__(self, master):
-        self.label_created = False
+        self.cps = 10
         self.clicking = False
         self.delay = 1
-        self.hotkey = KeyCode(char='`')
-        self.hotkey_options = ['`', 't', 'r']
+        self.hotkey = KeyCode(char='t')
+        self.hotkey_options = ['t', '`', 'r']
         self.mouse = Controller()
 
         # GUI setup
         self.master = master
-        self.master.title("Autoclicker")
+        self.master.title("Autoclicker by Gor Mar")
 
-        # Welcome Label
-        self.welcome_label = tk.Label(master, text="Welcome to Autoclicker", font=("Arial", 15))
-        self.welcome_label.pack()
+        # Click button
+        click_style = ttk.Style()
+        click_style.configure("Click.TButton", font=("Arial", 15))
 
-        # Credits
-        self.credits_label = tk.Label(master, text="By Gor Mar", font=("Arial", 10))
-        self.credits_label.pack()
-
-        # CPS entry
-        self.cps_label = tk.Label(master, text="Enter CPS:", font=("Arial", 15))
-        self.cps_label.pack(pady=5)
-
-        vcmd = (self.master.register(self.validate_input), '%P')
-        self.cps_entry = tk.Entry(master, validate="key", validatecommand=vcmd)
-        self.cps_entry.pack(pady=10)
-
-        # Hotkey dropdown menu
-        self.select_label = tk.Label(master, text="Select hotkey:", font=("Arial", 15))
-        self.select_label.pack( pady=5)
+        self.click_button = ttk.Label(master, style="Click.TButton", text=f"Press {self.hotkey} to start clicking \nwith {self.cps} CPS" 
+                                       if not self.clicking else f"Press {self.hotkey} to stop clicking")
+        self.click_button.pack(pady=15)
         
-        self.hotkey_var = tk.StringVar(master, value=self.hotkey.char)
-        self.hotkey_combobox = ttk.Combobox(master, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", font=("Arial", 15))
-        self.hotkey_combobox.pack(pady=10)
+        # Options button
+        options_style = ttk.Style()
+        options_style.configure("Options.TButton", font=("Arial", 15))
 
-        # Save button
-        self.save_button = tk.Button(master, text="Save", command=self.update_cps, font=("Arial", 15))
-        self.save_button.pack(pady=6)
+        self.options_button = ttk.Button(master, text="Options", command=self.options_window, style="Options.TButton")
+        self.options_button.pack(pady=5)
 
         # Create thread for GUI
         self.gui_thread = threading.Thread(target=self.setup_gui)
@@ -58,6 +45,37 @@ class Autoclicker:
         self.click_thread.start()
 
         master.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def options_window(self):
+        options_window = tk.Toplevel(self.master)
+        options_window.title("Options")
+        options_window.geometry("200x250")
+
+        self.label_created = False
+
+        # CPS entry
+        self.cps_label = tk.Label(options_window, text="Enter CPS:", font=("Arial", 15))
+        self.cps_label.pack(pady=5)
+
+        vcmd = (self.master.register(self.validate_input), '%P')
+        self.cps_entry = tk.Entry(options_window, validate="key", validatecommand=vcmd)
+        self.cps_entry.pack(pady=10)
+
+        # Hotkey dropdown menu
+        self.select_label = tk.Label(options_window, text="Select hotkey:", font=("Arial", 15))
+        self.select_label.pack(pady=5)
+        
+        self.hotkey_var = tk.StringVar(options_window, value=self.hotkey.char)
+        self.hotkey_combobox = ttk.Combobox(options_window, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", font=("Arial", 10))
+        self.hotkey_combobox.pack(pady=10)
+
+        # Save button
+        self.save_button = tk.Button(options_window, text="Save", command=lambda: [self.update_cps(options_window), self.update_button_text()], font=("Arial", 15))
+        self.save_button.pack(pady=6)
+
+    def update_button_text(self):
+        self.hotkey = KeyCode(char=self.hotkey_var.get())
+        self.click_button.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
 
     def validate_input(self, value):
         if not value:
@@ -94,17 +112,17 @@ class Autoclicker:
         time.sleep(0.5)
         self.master.destroy()
 
-    def update_cps(self):
+    def update_cps(self, options_window):
         try:
-            cps = float(self.cps_entry.get())
-            if cps > 0:
-                self.delay = 1 / cps
+            self.cps = float(self.cps_entry.get())
+            if self.cps > 0:
+                self.delay = 1 / self.cps
             if self.label_created:
                 self.error_label.pack_forget()
-            print(f"CPS updated to {cps}")
+            print(f"CPS updated to {self.cps}")
         except ValueError:
             if not self.label_created:
-                self.error_label = tk.Label(self.master, text="Enter a valid CPS", font={"Arial", 10})
+                self.error_label = tk.Label(options_window, text="Enter a valid CPS", font={"Arial", 10}, fg="red")
                 self.error_label.pack(pady=5)
                 self.label_created = True
                 print("label created")
@@ -112,5 +130,5 @@ class Autoclicker:
 if __name__ == "__main__":
     root = tk.Tk()
     app = Autoclicker(root)
-    root.geometry("350x300")
+    root.geometry("250x150")
     root.mainloop()
