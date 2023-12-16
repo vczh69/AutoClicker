@@ -117,5 +117,5 @@ class CPSTester:
 if __name__ == "__main__":
     root = tk.Tk()
     app = CPSTester(root)
-    root.geometry("350x180")
+    root.geometry("300x180")
     root.mainloop()

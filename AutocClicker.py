@@ -29,7 +29,7 @@ class Autoclicker:
         
         # Options button
         options_style = ttk.Style()
-        options_style.configure("Options.TButton", font=("Arial", 15))
+        options_style.configure("Options.TButton", font=("Arial", 15), width=20)
 
         self.options_button = ttk.Button(master, text="Options", command=self.options_window, style="Options.TButton")
         self.options_button.pack(pady=5)
@@ -66,15 +66,19 @@ class Autoclicker:
         self.select_label.pack(pady=5)
         
         self.hotkey_var = tk.StringVar(options_window, value=self.hotkey.char)
-        self.hotkey_combobox = ttk.Combobox(options_window, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", font=("Arial", 10))
+        self.hotkey_combobox = ttk.Combobox(options_window, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", font=("Arial", 10), width=15)
         self.hotkey_combobox.pack(pady=10)
 
         # Save button
-        self.save_button = tk.Button(options_window, text="Save", command=lambda: [self.update_cps(options_window), self.update_button_text()], font=("Arial", 15))
+        save_style = ttk.Style()
+        save_style.configure("Save.TButton", font=("Arial", 15))
+
+        self.save_button = ttk.Button(options_window, style="Save.TButton", text="Save", command=lambda: [self.update_cps(options_window), self.update_button_text()])
         self.save_button.pack(pady=6)
 
     def update_button_text(self):
         self.hotkey = KeyCode(char=self.hotkey_var.get())
+        print(f"Hotkey updated to {self.hotkey}")
         self.click_button.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
 
     def validate_input(self, value):
@@ -119,6 +123,8 @@ class Autoclicker:
                 self.delay = 1 / self.cps
             if self.label_created:
                 self.error_label.pack_forget()
+            self.saved_label = tk.Label(options_window, text="Saved", font=("Arial", 18), fg="green")
+            self.saved_label.pack(pady=5)
             print(f"CPS updated to {self.cps}")
         except ValueError:
             if not self.label_created:
