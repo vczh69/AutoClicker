@@ -60,20 +60,20 @@ class Autoclicker:
         frame.grid(row=0, column=0)
         self.label_created = False
 
-        # CPS entry
+        # CPS
         self.cps_frame = tk.LabelFrame(frame, text="CPS", font=("Arial", 15))
         self.cps_frame.grid(row=0, column=0, padx=20, pady=10)
 
-        self.accept_var = tk.StringVar(value="No")
+        self.det_risk_var = tk.StringVar(value="No")
         self.det_risk = tk.Checkbutton(self.cps_frame, text="Lower\ndetection risk",
-                                        variable=self.accept_var, onvalue="Yes", offvalue="No")
+                                        variable=self.det_risk_var, onvalue="Yes", offvalue="No")
         self.det_risk.grid(row=0, column=0)
 
         vcmd = (self.master.register(self.validate_input), '%P')
-        self.cps_entry = tk.Entry(self.cps_frame, validate="key", validatecommand=vcmd)
+        self.cps_entry = ttk.Spinbox(self.cps_frame, from_=1, to=100, validate="key", validatecommand=vcmd)
         self.cps_entry.grid(row=0, column=1, pady=10, padx=10)
 
-        # Hotkey dropdown menu
+        # Hotkey
         self.hotkey_frame = tk.LabelFrame(frame, text="Hotkey", font=("Arial", 15))
         self.hotkey_frame.grid(row=1, column=0, padx=20, pady=10)
 
@@ -83,16 +83,42 @@ class Autoclicker:
         self.hotkey_var = tk.StringVar(self.hotkey_frame, value=self.hotkey.char)
         self.hotkey_combobox = ttk.Combobox(self.hotkey_frame, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", font=("Arial", 10), width=15)
         self.hotkey_combobox.grid(row=0, column=1, pady=10, padx=10)
+    
+        self.det_risk_var.trace_add('write', lambda *args, **kwargs: self.update_det_risk())
 
         # Save button
         save_style = ttk.Style()
-        save_style.configure("Save.TButton", font=("Arial", 15))
+        save_style.configure("Save.TButton", font=("Arial", 15), width=22)
 
-        self.save_button = ttk.Button(options_window, style="Save.TButton", text="Save", command=lambda: [self.update_cps(options_window), self.update_button_text()])
+        self.save_button = ttk.Button(options_window, style="Save.TButton", text="Save", command=lambda: [self.update_det_risk(options_window), self.update_cps(options_window), self.update_button_text()])
         self.save_button.grid(row=1, column=0, pady=6)
 
         if self.listener and self.listener.is_alive():
             self.listener.stop()
+
+    def update_det_risk(self, *args, **kwargs):
+        self.low_det_risk = self.det_risk_var.get()
+        if self.low_det_risk == "No":
+            self.cps_entry.grid(row=0, column=1, pady=10, padx=10)
+        else: 
+            self.cps_entry.grid_forget()
+
+    def update_cps(self, options_window):
+        try:
+            self.cps = float(self.cps_entry.get())
+            if self.cps > 0:
+                self.delay = 1 / self.cps
+            if self.label_created:
+                self.error_label.grid_forget()
+            self.saved_label = tk.Label(options_window, text="Saved", font=("Arial", 14), fg="green")
+            self.saved_label.grid()
+            print(f"CPS updated to {self.cps}")
+        except ValueError:
+            if not self.label_created:
+                self.error_label = tk.Label(options_window, text="Enter a valid CPS", font={"Arial", 10}, fg="red")
+                self.error_label.grid()
+                self.label_created = True
+                print("label created")
 
     def update_button_text(self):
         if self.listener and not self.listener.is_alive():
@@ -107,7 +133,12 @@ class Autoclicker:
         if not value:
             return True
 
-        return len(value) <= 4 and value.replace('.', '', 1).isdigit()
+        try:
+            num = float(value)
+            int_part, _, frac_part = value.partition('.')
+            return 0 <= num <= 100 and len(int_part) <= 3 and len(frac_part) <= 2
+        except ValueError:
+            return False
 
     def clicker(self):
         while True:
@@ -133,23 +164,6 @@ class Autoclicker:
         self.clicking = False
         time.sleep(0.5)
         self.master.destroy()
-
-    def update_cps(self, options_window):
-        try:
-            self.cps = float(self.cps_entry.get())
-            if self.cps > 0:
-                self.delay = 1 / self.cps
-            if self.label_created:
-                self.error_label.grid_forget()
-            self.saved_label = tk.Label(options_window, text="Saved", font=("Arial", 10), fg="green")
-            self.saved_label.grid(pady=5)
-            print(f"CPS updated to {self.cps}")
-        except ValueError:
-            if not self.label_created:
-                self.error_label = tk.Label(options_window, text="Enter a valid CPS", font={"Arial", 10}, fg="red")
-                self.error_label.grid(pady=5)
-                self.label_created = True
-                print("label created")
 
 if __name__ == "__main__":
     root = tk.Tk()
