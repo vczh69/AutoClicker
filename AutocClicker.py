@@ -13,6 +13,7 @@ class Autoclicker:
         self.delay = 1
         self.hotkey = KeyCode(char='t')
         self.hotkey_options = ['t', '`', 'r']
+        self.cps_options = ["8-11", "9-12", "10-13", "11-14", "12-15", "13-16", "14-17", "15-18", "16-19", "17-20", "18-21", "19-22"]
         self.mouse = Controller()
         self.listener = None
 
@@ -100,12 +101,32 @@ class Autoclicker:
         self.low_det_risk = self.det_risk_var.get()
         if self.low_det_risk == "No":
             self.cps_entry.grid(row=0, column=1, pady=10, padx=10)
-        else: 
+
+            if hasattr(self, 'cps_dropdown'):
+                self.cps_dropdown.grid_forget()
+        else:
             self.cps_entry.grid_forget()
+
+            if not hasattr(self, 'cps_dropdown'):
+                self.cps_dropdown = ttk.Combobox(self.cps_frame, values=self.cps_options, state="readonly")
+
+            self.cps_dropdown.grid(row=0, column=1, pady=10, padx=10)
+            self.update_cps_dropdown()
+
+    def update_cps_dropdown(self):
+        self.cps_range = self.cps_dropdown.get()
+        if self.cps_range:
+            cps_start, cps_end = map(int, self.cps_range.split('-'))
+            cps_values = np.random.uniform(cps_start, cps_end, size=10)
+            self.cps_values = [round(cps, 2) for cps in cps_values.tolist()]
 
     def update_cps(self, options_window):
         try:
-            self.cps = float(self.cps_entry.get())
+            if self.low_det_risk == "No":
+                self.cps = float(self.cps_entry.get())
+            else:
+                self.cps = np.random.choice(self.cps_values)
+                
             if self.cps > 0:
                 self.delay = 1 / self.cps
             if self.label_created:
@@ -127,8 +148,11 @@ class Autoclicker:
 
         self.hotkey = KeyCode(char=self.hotkey_var.get())
         print(f"Hotkey updated to {self.hotkey}")
-        self.click_button.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
-
+        if self.low_det_risk == "No":
+            self.click_button.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
+        else:
+            self.click_button.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps_range} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")   
+    
     def validate_input(self, value):
         if not value:
             return True
@@ -145,6 +169,8 @@ class Autoclicker:
             start_time = time.time()
 
             if self.clicking:
+                if self.low_det_risk == "Yes":
+                    self.delay = 1 / self.cps
                 self.mouse.click(Button.left, 1)
 
             execution_time = time.time() - start_time
