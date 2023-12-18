@@ -9,13 +9,14 @@ from tkinter import ttk
 class Autoclicker:
     def __init__(self, master):
         self.cps = 10
-        self.clicking = False
         self.delay = 1
         self.hotkey = KeyCode(char='t')
         self.hotkey_options = ['t', '`', 'r']
         self.cps_options = ["8-11", "9-12", "10-13", "11-14", "12-15", "13-16", "14-17", "15-18", "16-19", "17-20", "18-21", "19-22"]
         self.mouse = Controller()
         self.listener = None
+        self.options_window_open = False
+        self.clicking = False
 
         # GUI setup
         self.master = master
@@ -25,10 +26,10 @@ class Autoclicker:
         click_style = ttk.Style()
         click_style.configure("Click.TButton", font=("Arial", 15))
 
-        self.click_button = ttk.Label(master, style="Click.TButton", text=f"Press {self.hotkey} to start clicking \nwith {self.cps} CPS" 
+        self.click_button = ttk.Label(master, style="Click.TButton", text=f"Press {self.hotkey} to start clicking \nwith {self.cps} CPS"
                                        if not self.clicking else f"Press {self.hotkey} to stop clicking")
         self.click_button.pack(pady=15)
-        
+
         # Options button
         options_style = ttk.Style()
         options_style.configure("Options.TButton", font=("Arial", 15), width=20)
@@ -54,12 +55,16 @@ class Autoclicker:
         self.listener.join()
 
     def options_window(self):
+        if self.options_window_open:
+            return
         options_window = tk.Toplevel(self.master)
         options_window.title("Options")
         options_window.geometry("300x250")
+        options_window.protocol("WM_DELETE_WINDOW", lambda: self.on_options_close(options_window))
         frame = ttk.Frame(options_window)
         frame.grid(row=0, column=0)
         self.label_created = False
+        self.options_window_open = True
 
         # CPS
         self.cps_frame = tk.LabelFrame(frame, text="CPS", font=("Arial", 15))
@@ -91,11 +96,22 @@ class Autoclicker:
         save_style = ttk.Style()
         save_style.configure("Save.TButton", font=("Arial", 15), width=22)
 
-        self.save_button = ttk.Button(options_window, style="Save.TButton", text="Save", command=lambda: [self.update_det_risk(options_window), self.update_cps(options_window), self.update_button_text()])
+        self.save_button = ttk.Button(options_window, style="Save.TButton", text="Save", command=lambda: [self.update_det_risk(options_window), self.update_cps(options_window), self.update_button_text(), self.start_cps_updates(options_window)])
         self.save_button.grid(row=1, column=0, pady=6)
 
         if self.listener and self.listener.is_alive():
             self.listener.stop()
+
+    def on_options_close(self, options_window):
+        self.options_window_open = False
+        options_window.destroy()
+        if self.listener and not self.listener.is_alive():
+            self.listener = Listener(on_press=self.toggle_event)
+            self.listener.start()
+
+    def start_cps_updates(self, options_window):
+        random_delay = np.random.uniform(5, 10)
+        self.master.after(int(random_delay * 1000), lambda: self.update_cps(options_window))
 
     def update_det_risk(self, *args, **kwargs):
         self.low_det_risk = self.det_risk_var.get()
