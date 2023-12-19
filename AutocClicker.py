@@ -15,27 +15,65 @@ class Autoclicker:
         self.cps_options = ["8-11", "9-12", "10-13", "11-14", "12-15", "13-16", "14-17", "15-18", "16-19", "17-20", "18-21", "19-22"]
         self.mouse = Controller()
         self.listener = None
-        self.options_window_open = False
         self.clicking = False
+        self.label_created = False
+
+        frame = ttk.Frame(master)
+        frame.grid(row=0, column=0)
 
         # GUI setup
         self.master = master
         self.master.title("Autoclicker by Gor Mar")
 
-        # Click button
-        click_style = ttk.Style()
-        click_style.configure("Click.TButton", font=("Arial", 15))
+        # Info
+        self.info_frame = tk.LabelFrame(frame, text="Info", font=("Arial", 15))
+        self.info_frame.grid(row=0, column=0, padx=20, pady=10)
 
-        self.click_button = ttk.Label(master, style="Click.TButton", text=f"Press {self.hotkey} to start clicking \nwith {self.cps} CPS"
+        info_style = ttk.Style()
+        info_style.configure("Info.TButton", font=("Arial", 12))
+
+        self.info_label = ttk.Label(self.info_frame, style="Info.TButton", text=f"Press {self.hotkey} to start clicking \nwith {self.cps} CPS"
                                        if not self.clicking else f"Press {self.hotkey} to stop clicking")
-        self.click_button.pack(pady=15)
+        self.info_label.grid(row=0, column=0, padx=10, pady=5)
 
-        # Options button
-        options_style = ttk.Style()
-        options_style.configure("Options.TButton", font=("Arial", 15), width=20)
+        # CPS
+        self.cps_frame = tk.LabelFrame(frame, text="CPS", font=("Arial", 15))
+        self.cps_frame.grid(row=0, column=1, padx=20, pady=10)
 
-        self.options_button = ttk.Button(master, text="Options", command=self.options_window, style="Options.TButton")
-        self.options_button.pack(pady=5)
+        self.det_risk_var = tk.StringVar(value="No")
+        self.det_risk = tk.Checkbutton(self.cps_frame, text="Lower\ndetection risk",
+                                        variable=self.det_risk_var, onvalue="Yes", offvalue="No")
+        self.det_risk.grid(row=0, column=0)
+
+        vcmd = (self.master.register(self.validate_input), '%P')
+        self.cps_spinbox = ttk.Spinbox(self.cps_frame, from_=1, to=100, validate="key", validatecommand=vcmd)
+        self.cps_spinbox.grid(row=0, column=1, pady=10, padx=10)
+
+        self.cps_spinbox.delete(0, tk.END)
+        self.cps_spinbox.insert(0, "10") 
+
+        # Hotkey
+        self.hotkey_frame = tk.LabelFrame(frame, text="Hotkey", font=("Arial", 15))
+        self.hotkey_frame.grid(row=1, column=0, columnspan=2, padx=20, pady=10)
+
+        self.select_label = tk.Label(self.hotkey_frame, text="Select hotkey:")
+        self.select_label.grid(row=0, column=0, pady=10, padx=10)
+
+        self.hotkey_var = tk.StringVar(value=self.hotkey.char)
+        self.hotkey_combobox = ttk.Combobox(self.hotkey_frame, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", font=("Arial", 10), width=15)
+        self.hotkey_combobox.grid(row=0, column=1, pady=10, padx=10)
+
+        self.det_risk_var.trace_add('write', lambda *args, **kwargs: self.update_det_risk())
+
+        # Save button
+        save_style = ttk.Style()
+        save_style.configure("Save.TButton", font=("Arial", 15), width=22)
+
+        self.save_button = ttk.Button(master, style="Save.TButton", text="Save", command=lambda: [self.update_det_risk(), self.update_cps(), self.update_button_text(), self.start_cps_updates()])
+        self.save_button.grid(row=2, column=0, columnspan=2, pady=2)
+
+        if self.listener and self.listener.is_alive():
+            self.listener.stop()
 
         # Create thread for GUI
         self.gui_thread = threading.Thread(target=self.setup_gui)
@@ -54,105 +92,51 @@ class Autoclicker:
         self.listener.start()
         self.listener.join()
 
-    def options_window(self):
-        if self.options_window_open:
-            return
-        options_window = tk.Toplevel(self.master)
-        options_window.title("Options")
-        options_window.geometry("300x250")
-        options_window.protocol("WM_DELETE_WINDOW", lambda: self.on_options_close(options_window))
-        frame = ttk.Frame(options_window)
-        frame.grid(row=0, column=0)
-        self.label_created = False
-        self.options_window_open = True
-
-        # CPS
-        self.cps_frame = tk.LabelFrame(frame, text="CPS", font=("Arial", 15))
-        self.cps_frame.grid(row=0, column=0, padx=20, pady=10)
-
-        self.det_risk_var = tk.StringVar(value="No")
-        self.det_risk = tk.Checkbutton(self.cps_frame, text="Lower\ndetection risk",
-                                        variable=self.det_risk_var, onvalue="Yes", offvalue="No")
-        self.det_risk.grid(row=0, column=0)
-
-        vcmd = (self.master.register(self.validate_input), '%P')
-        self.cps_entry = ttk.Spinbox(self.cps_frame, from_=1, to=100, validate="key", validatecommand=vcmd)
-        self.cps_entry.grid(row=0, column=1, pady=10, padx=10)
-
-        # Hotkey
-        self.hotkey_frame = tk.LabelFrame(frame, text="Hotkey", font=("Arial", 15))
-        self.hotkey_frame.grid(row=1, column=0, padx=20, pady=10)
-
-        self.select_label = tk.Label(self.hotkey_frame, text="Select hotkey:")
-        self.select_label.grid(row=0, column=0, pady=10, padx=10)
-
-        self.hotkey_var = tk.StringVar(self.hotkey_frame, value=self.hotkey.char)
-        self.hotkey_combobox = ttk.Combobox(self.hotkey_frame, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", font=("Arial", 10), width=15)
-        self.hotkey_combobox.grid(row=0, column=1, pady=10, padx=10)
-    
-        self.det_risk_var.trace_add('write', lambda *args, **kwargs: self.update_det_risk())
-
-        # Save button
-        save_style = ttk.Style()
-        save_style.configure("Save.TButton", font=("Arial", 15), width=22)
-
-        self.save_button = ttk.Button(options_window, style="Save.TButton", text="Save", command=lambda: [self.update_det_risk(options_window), self.update_cps(options_window), self.update_button_text(), self.start_cps_updates(options_window)])
-        self.save_button.grid(row=1, column=0, pady=6)
-
-        if self.listener and self.listener.is_alive():
-            self.listener.stop()
-
-    def on_options_close(self, options_window):
-        self.options_window_open = False
-        options_window.destroy()
-        if self.listener and not self.listener.is_alive():
-            self.listener = Listener(on_press=self.toggle_event)
-            self.listener.start()
-
-    def start_cps_updates(self, options_window):
+    def start_cps_updates(self):
         random_delay = np.random.uniform(5, 10)
-        self.master.after(int(random_delay * 1000), lambda: self.update_cps(options_window))
+        self.master.after(int(random_delay * 1000), self.update_cps_periodically)
+
+    def update_cps_periodically(self):
+        if self.det_risk_var.get() == "Yes":
+            self.update_cps()
+            self.start_cps_updates()
 
     def update_det_risk(self, *args, **kwargs):
         self.low_det_risk = self.det_risk_var.get()
         if self.low_det_risk == "No":
-            self.cps_entry.grid(row=0, column=1, pady=10, padx=10)
+            self.cps_spinbox.grid(row=0, column=1, pady=10, padx=10)
 
             if hasattr(self, 'cps_dropdown'):
                 self.cps_dropdown.grid_forget()
         else:
-            self.cps_entry.grid_forget()
+            self.cps_spinbox.grid_forget()
 
             if not hasattr(self, 'cps_dropdown'):
                 self.cps_dropdown = ttk.Combobox(self.cps_frame, values=self.cps_options, state="readonly")
+                self.cps_dropdown.set("10-13") 
 
             self.cps_dropdown.grid(row=0, column=1, pady=10, padx=10)
-            self.update_cps_dropdown()
 
-    def update_cps_dropdown(self):
-        self.cps_range = self.cps_dropdown.get()
-        if self.cps_range:
-            cps_start, cps_end = map(int, self.cps_range.split('-'))
-            cps_values = np.random.uniform(cps_start, cps_end, size=10)
-            self.cps_values = [round(cps, 2) for cps in cps_values.tolist()]
-
-    def update_cps(self, options_window):
+    def update_cps(self):
         try:
             if self.low_det_risk == "No":
-                self.cps = float(self.cps_entry.get())
+                self.cps = float(self.cps_spinbox.get())
             else:
-                self.cps = np.random.choice(self.cps_values)
+                self.cps_range = self.cps_dropdown.get()
+                if self.cps_range:
+                    cps_start, cps_end = map(int, self.cps_range.split('-'))
+                    self.cps = round(np.random.uniform(cps_start, cps_end), 2)
                 
             if self.cps > 0:
                 self.delay = 1 / self.cps
             if self.label_created:
                 self.error_label.grid_forget()
-            self.saved_label = tk.Label(options_window, text="Saved", font=("Arial", 14), fg="green")
+            self.saved_label = tk.Label(self.master, text="Saved", font=("Arial", 10), fg="green")
             self.saved_label.grid()
             print(f"CPS updated to {self.cps}")
         except ValueError:
             if not self.label_created:
-                self.error_label = tk.Label(options_window, text="Enter a valid CPS", font={"Arial", 10}, fg="red")
+                self.error_label = tk.Label(self.master, text="Enter a valid CPS", font=("Arial", 10), fg="red")
                 self.error_label.grid()
                 self.label_created = True
                 print("label created")
@@ -165,9 +149,9 @@ class Autoclicker:
         self.hotkey = KeyCode(char=self.hotkey_var.get())
         print(f"Hotkey updated to {self.hotkey}")
         if self.low_det_risk == "No":
-            self.click_button.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
+            self.info_label.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
         else:
-            self.click_button.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps_range} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")   
+            self.info_label.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps_range} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")   
     
     def validate_input(self, value):
         if not value:
@@ -210,5 +194,5 @@ class Autoclicker:
 if __name__ == "__main__":
     root = tk.Tk()
     app = Autoclicker(root)
-    root.geometry("250x150")
+    root.geometry("560x250")
     root.mainloop()
