@@ -8,6 +8,7 @@ from tkinter import ttk
 
 class Autoclicker:
     def __init__(self, master):
+        self.cps_range = "10-13"
         self.cps = 10
         self.delay = 1
         self.hotkey = KeyCode(char='t')
@@ -19,7 +20,6 @@ class Autoclicker:
         self.mouse = Controller()
         self.listener = None
         self.clicking = False
-        self.label_created = False
 
         frame = ttk.Frame(master)
         frame.grid(row=0, column=0)
@@ -35,8 +35,7 @@ class Autoclicker:
         info_style = ttk.Style()
         info_style.configure("Info.TButton", font=("Arial", 12))
 
-        self.info_label = ttk.Label(self.info_frame, style="Info.TButton", text=f"Press {self.hotkey} to start clicking \nwith {self.cps} CPS"
-                                       if not self.clicking else f"Press {self.hotkey} to stop clicking")
+        self.info_label = ttk.Label(self.info_frame, style="Info.TButton", text=f"Press {self.hotkey} to start clicking\n{self.clickingkey} with {self.cps} CPS")
         self.info_label.grid(row=0, column=0, padx=10, pady=5)
 
         # CPS
@@ -132,28 +131,16 @@ class Autoclicker:
             self.cps_dropdown.grid(row=0, column=1, pady=10, padx=10)
 
     def update_cps(self):
-        try:
-            if self.low_det_risk == "No":
-                self.cps = float(self.cps_spinbox.get())
-            else:
-                self.cps_range = self.cps_dropdown.get()
-                if self.cps_range:
-                    cps_start, cps_end = map(int, self.cps_range.split('-'))
-                    self.cps = round(np.random.uniform(cps_start, cps_end), 2)
-                
-            if self.cps > 0:
-                self.delay = 1 / self.cps
-            if self.label_created:
-                self.error_label.grid_forget()
-            self.saved_label = tk.Label(self.master, text="Saved", font=("Arial", 10), fg="green")
-            self.saved_label.grid()
-            print(f"CPS updated to {self.cps}")
-        except ValueError:
-            if not self.label_created:  # REMOVE
-                self.error_label = tk.Label(self.master, text="Enter a valid CPS", font=("Arial", 10), fg="red")
-                self.error_label.grid()
-                self.label_created = True
-                print("label created")
+        if self.low_det_risk == "No":
+            self.cps = float(self.cps_spinbox.get())
+        else:
+            self.cps_range = self.cps_dropdown.get()
+            if self.cps_range:
+                cps_start, cps_end = map(int, self.cps_range.split('-'))
+                self.cps = round(np.random.uniform(cps_start, cps_end), 2)
+            
+        if self.cps > 0:
+            self.delay = 1 / self.cps
 
     def update_button_text(self):
         if self.listener and not self.listener.is_alive():
@@ -162,13 +149,13 @@ class Autoclicker:
 
         self.hotkey = KeyCode(char=self.hotkey_var.get())
         self.clickingkey = self.clickingkey_var.get()
+        self.update_info_label()
 
-        print(f"Hotkey updated to {self.hotkey}, Clicking key updated to {self.clickingkey}")
-
+    def update_info_label(self):
         if self.low_det_risk == "No":
-            self.info_label.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
+            self.info_label.configure(text=f"Press {self.hotkey} to {'stop' if self.clicking else 'start'} clicking\n{self.clickingkey} with {self.cps} CPS")
         else:
-            self.info_label.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps_range} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
+            self.info_label.configure(text=f"Press {self.hotkey} to {'stop' if self.clicking else 'start'} clicking\n{self.clickingkey} with {self.cps_range} CPS")
     
     def validate_input(self, value):
         if not value:
@@ -207,7 +194,7 @@ class Autoclicker:
 
         if pressed_key == selected_hotkey:
             self.clicking = not self.clicking
-            print("Turned off" if not self.clicking else "Turned on")
+            self.update_info_label()
 
     def on_close(self):
         self.clicking = False
