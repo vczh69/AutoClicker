@@ -11,8 +11,11 @@ class Autoclicker:
         self.cps = 10
         self.delay = 1
         self.hotkey = KeyCode(char='t')
+        self.clickingkey = "LMB"
+        self.clickingkey_options = ["LMB", "RMB", "MMB"]
         self.hotkey_options = ['t', '`', 'r']
         self.cps_options = ["8-11", "9-12", "10-13", "11-14", "12-15", "13-16", "14-17", "15-18", "16-19", "17-20", "18-21", "19-22"]
+        self.low_det_risk = "No"
         self.mouse = Controller()
         self.listener = None
         self.clicking = False
@@ -52,12 +55,23 @@ class Autoclicker:
         self.cps_spinbox.delete(0, tk.END)
         self.cps_spinbox.insert(0, "10") 
 
+        # Clicking Key
+        self.clickingkey_frame = tk.LabelFrame(frame, text="Clicking Key", font=("Arial", 15))
+        self.clickingkey_frame.grid(row=1, column=0, padx=20, pady=10)
+
+        self.clickingkey_label = tk.Label(self.clickingkey_frame, text="Select\n Clicking Key:")
+        self.clickingkey_label.grid(row=0, column=0, pady=10, padx=10)
+
+        self.clickingkey_var = tk.StringVar(value=self.clickingkey)
+        self.clickingkey_combobox = ttk.Combobox(self.clickingkey_frame, textvariable=self.clickingkey_var, values=self.clickingkey_options, state="readonly", font=("Arial", 10), width=10)
+        self.clickingkey_combobox.grid(row=0, column=1, pady=10, padx=10)
+
         # Hotkey
         self.hotkey_frame = tk.LabelFrame(frame, text="Hotkey", font=("Arial", 15))
-        self.hotkey_frame.grid(row=1, column=0, columnspan=2, padx=20, pady=10)
+        self.hotkey_frame.grid(row=1, column=1, padx=20, pady=10)
 
-        self.select_label = tk.Label(self.hotkey_frame, text="Select hotkey:")
-        self.select_label.grid(row=0, column=0, pady=10, padx=10)
+        self.hotkey_label = tk.Label(self.hotkey_frame, text="Select Hotkey:")
+        self.hotkey_label.grid(row=0, column=0, pady=10, padx=10)
 
         self.hotkey_var = tk.StringVar(value=self.hotkey.char)
         self.hotkey_combobox = ttk.Combobox(self.hotkey_frame, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", font=("Arial", 10), width=15)
@@ -97,7 +111,7 @@ class Autoclicker:
         self.master.after(int(random_delay * 1000), self.update_cps_periodically)
 
     def update_cps_periodically(self):
-        if self.det_risk_var.get() == "Yes":
+        if self.low_det_risk == "Yes":
             self.update_cps()
             self.start_cps_updates()
 
@@ -135,7 +149,7 @@ class Autoclicker:
             self.saved_label.grid()
             print(f"CPS updated to {self.cps}")
         except ValueError:
-            if not self.label_created:
+            if not self.label_created:  # REMOVE
                 self.error_label = tk.Label(self.master, text="Enter a valid CPS", font=("Arial", 10), fg="red")
                 self.error_label.grid()
                 self.label_created = True
@@ -147,11 +161,14 @@ class Autoclicker:
             self.listener.start()
 
         self.hotkey = KeyCode(char=self.hotkey_var.get())
-        print(f"Hotkey updated to {self.hotkey}")
+        self.clickingkey = self.clickingkey_var.get()
+
+        print(f"Hotkey updated to {self.hotkey}, Clicking key updated to {self.clickingkey}")
+
         if self.low_det_risk == "No":
             self.info_label.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
         else:
-            self.info_label.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps_range} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")   
+            self.info_label.configure(text=f"Press {self.hotkey} to start clicking\nwith {self.cps_range} CPS" if not self.clicking else f"Press {self.hotkey} to stop clicking")
     
     def validate_input(self, value):
         if not value:
@@ -171,7 +188,13 @@ class Autoclicker:
             if self.clicking:
                 if self.low_det_risk == "Yes":
                     self.delay = 1 / self.cps
-                self.mouse.click(Button.left, 1)
+
+                if self.clickingkey == "LMB":
+                    self.mouse.click(Button.left, 1)
+                elif self.clickingkey == "RMB":
+                    self.mouse.click(Button.right, 1)
+                elif self.clickingkey == "MMB":
+                    self.mouse.click(Button.middle, 1)
 
             execution_time = time.time() - start_time
             sleep_time = max(0, self.delay - execution_time)
