@@ -1,7 +1,7 @@
 import time
 import numpy as np
 from pynput.mouse import Controller, Button
-from pynput.keyboard import Listener, KeyCode
+import keyboard
 import threading
 import tkinter as tk
 from tkinter import ttk
@@ -9,17 +9,16 @@ from tkinter import ttk
 class Autoclicker:
     def __init__(self, master):
         self.cps_range = "10-13"
-        self.cps = 10
+        self.cps = 1.0
         self.delay = 1
-        self.hotkey = KeyCode(char='t')
+        self.hotkey = 't'
         self.clickingkey = "LMB"
         self.clickingkey_options = ["LMB", "RMB", "MMB"]
-        self.hotkey_options = ['t', '`', 'r']
         self.cps_options = ["8-11", "9-12", "10-13", "11-14", "12-15", "13-16", "14-17", "15-18", "16-19", "17-20", "18-21", "19-22"]
         self.low_det_risk = "No"
         self.mouse = Controller()
-        self.listener = None
         self.clicking = False
+        self.recording = False
 
         frame = ttk.Frame(master)
         frame.grid(row=0, column=0)
@@ -52,7 +51,7 @@ class Autoclicker:
         self.cps_spinbox.grid(row=0, column=1, pady=10, padx=10)
 
         self.cps_spinbox.delete(0, tk.END)
-        self.cps_spinbox.insert(0, "10") 
+        self.cps_spinbox.insert(0, "1") 
 
         # Clicking Key
         self.clickingkey_frame = tk.LabelFrame(frame, text="Clicking Key", font=("Arial", 15))
@@ -69,11 +68,14 @@ class Autoclicker:
         self.hotkey_frame = tk.LabelFrame(frame, text="Hotkey", font=("Arial", 15))
         self.hotkey_frame.grid(row=1, column=1, padx=20, pady=10)
 
-        self.hotkey_label = tk.Label(self.hotkey_frame, text="Select Hotkey:")
-        self.hotkey_label.grid(row=0, column=0, pady=10, padx=10)
+        record_style = ttk.Style()
+        record_style.configure("Record.TButton", font=("Arial", 11))
 
-        self.hotkey_var = tk.StringVar(value=self.hotkey.char)
-        self.hotkey_combobox = ttk.Combobox(self.hotkey_frame, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", font=("Arial", 10), width=15)
+        self.record_button = ttk.Button(self.hotkey_frame, style="Record.TButton", text="Record", command=self.record_button_click)
+        self.record_button.grid(padx=5)
+
+        self.hotkey_var = tk.StringVar(value=self.hotkey)
+        self.hotkey_combobox = ttk.Entry(self.hotkey_frame, textvariable=self.hotkey_var, state="readonly", font=("Arial", 10), width=10)
         self.hotkey_combobox.grid(row=0, column=1, pady=10, padx=10)
 
         self.det_risk_var.trace_add('write', lambda *args, **kwargs: self.update_det_risk())
@@ -84,9 +86,6 @@ class Autoclicker:
 
         self.save_button = ttk.Button(master, style="Save.TButton", text="Save", command=lambda: [self.update_det_risk(), self.update_cps(), self.update_button_text(), self.start_cps_updates()])
         self.save_button.grid(row=2, column=0, columnspan=2, pady=2)
-
-        if self.listener and self.listener.is_alive():
-            self.listener.stop()
 
         # Create thread for GUI
         self.gui_thread = threading.Thread(target=self.setup_gui)
@@ -101,13 +100,22 @@ class Autoclicker:
         master.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def setup_gui(self):
-        self.listener = Listener(on_press=self.toggle_event)
-        self.listener.start()
-        self.listener.join()
+        keyboard.hook(self.toggle_event)
 
     def start_cps_updates(self):
-        random_delay = np.random.uniform(5, 10)
+        random_delay = np.random.uniform(2, 4)
         self.master.after(int(random_delay * 1000), self.update_cps_periodically)
+
+    def record_button_click(self):
+        if not self.recording:
+            self.record_button.configure(text="Recording...")
+            self.hotkey_var.set("")
+            self.recording = True
+            self.save_button['state'] = 'disabled'
+            self.record_button['state'] = 'disabled'
+        else:
+            self.record_button.configure(text="Record")
+            self.recording = False
 
     def update_cps_periodically(self):
         if self.low_det_risk == "Yes":
@@ -141,21 +149,21 @@ class Autoclicker:
             
         if self.cps > 0:
             self.delay = 1 / self.cps
+        print(f"CPS updated to {self.cps}")
 
     def update_button_text(self):
-        if self.listener and not self.listener.is_alive():
-            self.listener = Listener(on_press=self.toggle_event)
-            self.listener.start()
 
-        self.hotkey = KeyCode(char=self.hotkey_var.get())
+        self.hotkey = self.hotkey_var.get()
         self.clickingkey = self.clickingkey_var.get()
+
+        print(f"Hotkey updated to {self.hotkey}, Clicking key updated to {self.clickingkey}")
         self.update_info_label()
 
     def update_info_label(self):
         if self.low_det_risk == "No":
-            self.info_label.configure(text=f"Press {self.hotkey} to {'stop' if self.clicking else 'start'} clicking\n{self.clickingkey} with {self.cps} CPS")
+            self.info_label.configure(text=f"Press {self.hotkey} to {'start' if self.clicking else 'stop'} clicking\n{self.clickingkey} with {self.cps} CPS")
         else:
-            self.info_label.configure(text=f"Press {self.hotkey} to {'stop' if self.clicking else 'start'} clicking\n{self.clickingkey} with {self.cps_range} CPS")
+            self.info_label.configure(text=f"Press {self.hotkey} to {'start' if self.clicking else 'stop'} clicking\n{self.clickingkey} with {self.cps_range} CPS")
     
     def validate_input(self, value):
         if not value:
@@ -188,13 +196,18 @@ class Autoclicker:
 
             time.sleep(sleep_time)
 
-    def toggle_event(self, key):
-        pressed_key = str(key).replace("'", "")
-        selected_hotkey = str(self.hotkey_var.get())
+    def toggle_event(self, e):
+        if self.recording:
+            self.hotkey_var.set(e.name)
+            self.save_button['state'] = 'normal'
+            self.record_button['state'] = 'normal'
+            self.record_button.configure(text="Record")
+            self.recording = False
+            return
 
-        if pressed_key == selected_hotkey:
-            self.clicking = not self.clicking
+        if keyboard.is_pressed(self.hotkey):
             self.update_info_label()
+            self.clicking = not self.clicking
 
     def on_close(self):
         self.clicking = False
