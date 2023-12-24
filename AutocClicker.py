@@ -1,6 +1,5 @@
 import time
 import numpy as np
-from pynput import mouse
 from pynput.mouse import Controller, Button
 import keyboard
 import threading
@@ -21,7 +20,8 @@ class Autoclicker:
         self.low_det_risk = "No"
         self.mouse = Controller()
         self.clicking = False
-        self.recording = False
+        self.hotkey_recording = False
+        self.clickingkey_recording = False
 
         frame = ttk.Frame(master)
         frame.grid(row=0, column=0)
@@ -89,7 +89,7 @@ class Autoclicker:
         hotkey_record_style = ttk.Style()
         hotkey_record_style.configure("HotkeyRecord.TButton", font=("Arial", 10))
 
-        self.hotkey_record = ttk.Button(self.hotkey_widgets_frame, style="HotkeyRecord.TButton", text="Record", command=self.record_button_click)
+        self.hotkey_record = ttk.Button(self.hotkey_widgets_frame, style="HotkeyRecord.TButton", text="Record", command=self.record_hotkey_button_click)
         self.hotkey_record.grid(row=0, column=0, padx=5)
 
         self.hotkey_var = tk.StringVar(value=self.hotkey)
@@ -125,16 +125,27 @@ class Autoclicker:
         random_delay = np.random.uniform(2, 4)
         self.master.after(int(random_delay * 1000), self.update_cps_periodically)
 
-    def record_button_click(self):
-        if not self.recording:
+    def record_hotkey_button_click(self):
+        if not self.hotkey_recording:
             self.hotkey_record.configure(text="Recording...")
             self.hotkey_var.set("")
-            self.recording = True
+            self.hotkey_recording = True
             self.save_button['state'] = 'disabled'
             self.hotkey_record['state'] = 'disabled'
         else:
             self.hotkey_record.configure(text="Record")
-            self.recording = False
+            self.hotkey_recording = False
+
+    def record_clickingkey_button_click(self):
+        if not self.clickingkey_recording:
+            self.clickingkey_record.configure(text="Recording...")
+            self.clickingkey_var.set("")
+            self.clickingkey_recording = True
+            self.save_button['state'] = 'disabled'
+            self.clickingkey_record['state'] = 'disabled'
+        else:
+            self.clickingkey_record.configure(text="Record")
+            self.clickingkey_recording = False
 
     def update_cps_periodically(self):
         if self.low_det_risk == "Yes":
@@ -155,9 +166,9 @@ class Autoclicker:
             if not hasattr(self, 'clickingkey_record'):
                 clickingkey_record_style = ttk.Style()
                 clickingkey_record_style.configure("ClickingkeyRecord.TButton", font=("Arial", 10))
-                self.clickingkey_record = ttk.Button(self.clickingkey_widgets_frame, style="ClickingkeyRecord.TButton", text="Record", command=...)
+                self.clickingkey_record = ttk.Button(self.clickingkey_widgets_frame, style="ClickingkeyRecord.TButton", text="Record", command=self.record_clickingkey_button_click)
 
-                self.clickingkey_entry = ttk.Entry(self.clickingkey_widgets_frame, textvariable=self.clicking_mb_var, state="readonly", font=("Arial", 10), width=8)
+                self.clickingkey_entry = ttk.Entry(self.clickingkey_widgets_frame, textvariable=self.clickingkey_var, state="readonly", font=("Arial", 10), width=8)
 
             self.clickingkey_record.grid(row=0, column=0, pady=10, padx=10)
             self.clickingkey_entry.grid(row=0, column=1, pady=10 ,padx=10)
@@ -247,6 +258,8 @@ class Autoclicker:
                     self.mouse.click(Button.right, 1)
                 elif self.clickingkey == "MMB":
                     self.mouse.click(Button.middle, 1)
+                else:
+                    keyboard.press_and_release(self.clickingkey)
 
             execution_time = time.time() - start_time
             sleep_time = max(0, self.delay - execution_time)
@@ -254,12 +267,20 @@ class Autoclicker:
             time.sleep(sleep_time)
 
     def toggle_event(self, e):
-        if self.recording:
+        if self.hotkey_recording:
             self.hotkey_var.set(e.name)
             self.save_button['state'] = 'normal'
             self.hotkey_record['state'] = 'normal'
             self.hotkey_record.configure(text="Record")
-            self.recording = False
+            self.hotkey_recording = False
+            return
+
+        if self.clickingkey_recording:
+            self.clickingkey_var.set(e.name)
+            self.save_button['state'] = 'normal'
+            self.clickingkey_record['state'] = 'normal'
+            self.clickingkey_record.configure(text="Record")
+            self.clickingkey_recording = False
             return
 
         if keyboard.is_pressed(self.hotkey):
