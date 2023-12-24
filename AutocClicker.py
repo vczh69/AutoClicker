@@ -1,6 +1,7 @@
 import time
 import numpy as np
-from pynput.mouse import Controller, Button
+from pynput import mouse
+from pynput.mouse import Controller, Button, Listener
 import keyboard
 import threading
 import tkinter as tk
@@ -12,7 +13,7 @@ class Autoclicker:
         self.cps = 1.0
         self.delay = 1
         self.hotkey = 't'
-        self.hotkey_options = ["LMB" , "RMB", "MMB"]
+        self.hotkey_options = ["LMB" , "RMB", "MMB", "XB1", "XB2"]
         self.clickingkey = "LMB"
         self.clickingkey_options = ["LMB", "RMB", "MMB"]
         self.cps_options = ["8-11", "9-12", "10-13", "11-14", "12-15", "13-16", "14-17", "15-18", "16-19", "17-20", "18-21", "19-22"]
@@ -104,7 +105,7 @@ class Autoclicker:
         save_style.configure("Save.TButton", font=("Arial", 15), width=22)
 
         self.save_button = ttk.Button(master, style="Save.TButton", text="Save", command=lambda: [self.update_det_risk(), self.update_cps(), self.update_button_text(), self.start_cps_updates()])
-        self.save_button.grid(row=2, column=0, columnspan=2, pady=2)
+        self.save_button.grid(row=2, column=0, columnspan=2, pady=10)
 
         # Create thread for GUI
         self.gui_thread = threading.Thread(target=self.setup_gui)
@@ -115,6 +116,11 @@ class Autoclicker:
         self.click_thread = threading.Thread(target=self.clicker)
         self.click_thread.daemon = True
         self.click_thread.start()
+
+        # Create thread for mouse hotkey
+        self.mouse_listener_thread = threading.Thread(target=self.hotkey_mouse)
+        self.mouse_listener_thread.daemon = True
+        self.mouse_listener_thread.start()
 
         master.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -186,7 +192,7 @@ class Autoclicker:
             self.hotkey_entry.grid_forget()
 
             if not hasattr(self, 'hotkey_combobox'):
-                self.hotkey_combobox = ttk.Combobox(self.hotkey_widgets_frame, values=self.hotkey_options, state="readonly", width=7)
+                self.hotkey_combobox = ttk.Combobox(self.hotkey_widgets_frame, textvariable=self.hotkey_var, values=self.hotkey_options, state="readonly", width=7)
 
             self.hotkey_combobox.grid(row=0, column=0, pady=10, padx=10)
 
@@ -283,9 +289,30 @@ class Autoclicker:
             self.clickingkey_recording = False
             return
 
-        if keyboard.is_pressed(self.hotkey):
+        if self.hotkey not in list(self.hotkey_options) and keyboard.is_pressed(self.hotkey):
             self.clicking = not self.clicking
             self.update_info_label()
+
+    def hotkey_mouse(self):
+        def on_click(x, y, button, pressed):
+            mouse_button_str = ""
+            if button == mouse.Button.left:
+                mouse_button_str = "LMB"
+            elif button == mouse.Button.right:
+                mouse_button_str = "RMB"
+            elif button == mouse.Button.middle:
+                mouse_button_str = "MMB"
+            elif button == mouse.Button.x1:
+                mouse_button_str = "XB1"
+            elif button == mouse.Button.x2:
+                mouse_button_str = "XB2"
+
+            if pressed and self.hotkey == mouse_button_str:
+                self.clicking = not self.clicking
+                self.update_info_label()
+
+        with Listener(on_click=on_click) as listener:
+            listener.join()
 
     def on_close(self):
         self.clicking = False
@@ -295,5 +322,5 @@ class Autoclicker:
 if __name__ == "__main__":
     root = tk.Tk()
     app = Autoclicker(root)
-    root.geometry("490x300")
+    root.geometry("475x270")
     root.mainloop()
